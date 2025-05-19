@@ -1,0 +1,6 @@
+discord.py
+python-dotenv
+pydantic
+d20
+aiohttp
+python-dateutil

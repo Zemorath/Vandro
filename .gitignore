@@ -1,2 +1,5 @@
+venv/
+*.db
 .env
-rpg_data.db
+__pycache__/
+*.pyc
