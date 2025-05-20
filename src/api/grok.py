@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 GROK_API_KEY = os.getenv('GROK_API_KEY')
 
-async def call_grok_api(system_prompt: str, user_message: str, model: str = "grok-3-mini-latest", max_tokens: int = 300):
+async def call_grok_api(system_prompt: str, user_message: str, model: str = "grok-3-mini-latest", max_tokens: int = 1000):
     # Log prompt length (approximate words)
     prompt_length = len(system_prompt.split()) + len(user_message.split())
     print(f"Prompt length: {prompt_length} words")
