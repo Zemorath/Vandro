@@ -7,6 +7,7 @@ from commands.character import setup as character_setup
 from commands.dice import setup as dice_setup
 from handlers.errors import setup as error_setup
 from handlers.messages import setup as message_setup
+from database.sqlite_db import init_db
 
 # Load environment variables
 load_dotenv()
@@ -28,6 +29,7 @@ def setup_bot():
 @bot.event
 async def on_ready():
     print(f'{bot.user} has connected to Discord!')
+    init_db()  # Initialize database
 
 if __name__ == '__main__':
     setup_bot()
