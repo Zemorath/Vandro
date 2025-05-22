@@ -2,6 +2,7 @@ from discord.ext import commands
 import sqlite3
 import json
 from datetime import datetime
+from api.grok import call_grok_api
 
 def setup(bot):
     @bot.command()
@@ -11,14 +12,30 @@ def setup(bot):
         Usage: !start_campaign <name> [system] [setting] [mode]
         Example: !start_campaign "Quest for Glory" dnd5e "dark fantasy" narrative
         """
+        # Generate campaign introduction
+        intro_prompt = (
+            f"D&D 5e DM for '{name}' ({setting}). Create a 100-150 word campaign introduction outlining the narrative, themes, and rules. "
+            f"Include 2-3 NPCs (names, roles). Mark 3 level-up milestones (e.g., major quests). Allow non-combat enemy resolutions. Adapt to player actions. Exclude reasoning."
+        )
+        try:
+            campaign_intro = await call_grok_api(intro_prompt, "Generate campaign introduction.", max_tokens=400)
+            if not campaign_intro or campaign_intro.startswith("Error"):
+                campaign_intro = f"Welcome to {name}, a {setting} adventure! Rules: Use !roll for actions, interact with NPCs, negotiate with enemies. Milestones: 3 major quests."
+        except Exception as e:
+            campaign_intro = f"Welcome to {name}, a {setting} adventure! Rules: Use !roll for actions, interact with NPCs, negotiate with enemies. Milestones: 3 major quests."
+        
+        # Default milestones if GPT fails
+        milestones = json.dumps(["Defeat the Bandit Lord", "Find the Temple Relic", "Confront the Dark God"])
+        
         conn = sqlite3.connect('rpg_data.db')
         c = conn.cursor()
-        c.execute('INSERT INTO campaigns (name, system, setting, status, last_updated, party, channel_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                  (name, system, setting, "active", datetime.now().isoformat(), json.dumps([ctx.author.id]), ctx.channel.id))
+        c.execute('INSERT INTO campaigns (name, system, setting, status, last_updated, party, channel_id, campaign_intro, milestones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                  (name, system, setting, "active", datetime.now().isoformat(), json.dumps([ctx.author.id]), ctx.channel.id, campaign_intro, milestones))
         campaign_id = c.lastrowid
         conn.commit()
         conn.close()
-        await ctx.send(f'Campaign "{name}" started in this channel! System: {system}, Setting: {setting}, Mode: {mode}. Use !join_campaign {campaign_id} to join.')
+        
+        await ctx.send(f'Campaign "{name}" started in this channel! System: {system}, Setting: {setting}, Mode: {mode}.\n\n{campaign_intro}\n\nUse !join_campaign {campaign_id} to join.')
 
     @bot.command()
     async def join_campaign(ctx, campaign_id: int):
